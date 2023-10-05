@@ -1,3 +1,10 @@
+# HOW TO GET TOKENS
+
+Configure your file system wallet and run this script.
+```
+ANCHOR_WALLET=~/.config/solana/id.json ANCHOR_PROVIDER_URL=https://staging-rpc.dev.eclipsenetwork.xyz  node setup/token_airdrop.js
+```
+
 # SPL token faucet
 This project aims at implementing an SPL token faucet in its simplest form using Anchor. Faucets are a must-have when developing dApps to test out token flows. A faucet allows you to receive an arbitrary amount of tokens; always coming from the same Mint. This program is deployoned on the eclipse testnet as `9XXyjMZtennyC1fRSLvUpiq9UuAfFpCS1a8RSzcg8rMH` and the mint is `6tyZgRJkMcqqKAVt26xc25tv5HK7ZGFNrYB3aGgpyEQA`
 
