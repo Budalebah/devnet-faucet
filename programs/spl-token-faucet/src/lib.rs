@@ -4,26 +4,34 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-declare_id!("4sN8PnN2ki2W4TFXAfzR645FWs8nimmsYeNtxM8RBK6A");
+declare_id!("9XXyjMZtennyC1fRSLvUpiq9UuAfFpCS1a8RSzcg8rMH");
+
 
 #[program]
 pub mod spl_token_faucet {
+    use anchor_lang::solana_program::entrypoint::ProgramResult;
+
     use super::*;
 
-    pub fn initialize_faucet(_ctx: Context<InitializeFaucet>, _mint_bump: u8) -> ProgramResult {
+    pub fn initialize_mint(_ctx: Context<InitializeMint>) -> ProgramResult {
+        msg!("Token mint pda initialized");
         Ok(())
     }
 
-    pub fn airdrop(ctx: Context<Airdrop>, mint_bump: u8, amount: u64) -> ProgramResult {
+    pub fn airdrop(ctx: Context<Airdrop>, amount: u64) -> ProgramResult {
+
         anchor_spl::token::mint_to(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
                 anchor_spl::token::MintTo {
                     mint: ctx.accounts.mint.to_account_info(),
-                    to: ctx.accounts.destination.to_account_info(),
+                    to: ctx.accounts.token_account.to_account_info(),
                     authority: ctx.accounts.mint.to_account_info(),
                 },
-                &[&[&"faucet-mint".as_bytes(), &[mint_bump]]],
+                &[&[
+                    "faucet-mint".as_bytes(),
+                    &[*ctx.bumps.get("mint").unwrap()]
+                ]],
             ),
             amount,
         )?;
@@ -33,41 +41,41 @@ pub mod spl_token_faucet {
 
 
 #[derive(Accounts)]
-#[instruction(mint_bump: u8)]
-pub struct InitializeFaucet<'info> {
+pub struct InitializeMint<'info> {
     #[account(
-        init_if_needed,
-        payer = payer,
-        seeds = [b"faucet-mint".as_ref()],
-        bump = mint_bump,
+        init,
+        seeds = ["faucet-mint".as_bytes()],
+        bump,
+        payer = user,
         mint::decimals = 6,
-        mint::authority = mint
+        mint::authority = mint,
     )]
     pub mint: Account<'info, Mint>,
-    pub payer: Signer<'info>,
-    pub system_program: Program<'info, System>,
+    #[account(mut)]
+    pub user: Signer<'info>,
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
+    pub system_program: Program<'info, System>
 }
 
 #[derive(Accounts)]
-#[instruction(mint_bump: u8, amount: u64)]
+#[instruction(amount: u64)]
 pub struct Airdrop<'info> {
     #[account(
-        seeds = [b"faucet-mint".as_ref()],
-        bump = mint_bump
+        seeds = ["faucet-mint".as_bytes()], 
+        bump,
+        mut
     )]
     pub mint: Account<'info, Mint>,
-
     #[account(
         init_if_needed,
-        payer = payer,
+        payer = user,
         associated_token::mint = mint,
-        associated_token::authority = receiver
+        associated_token::authority = user
     )]
-    pub destination: Account<'info, TokenAccount>,
-    pub payer: Signer<'info>,
-    pub receiver: AccountInfo<'info>,
+    pub token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

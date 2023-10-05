@@ -1,42 +1,17 @@
-import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
 const assert = require("assert");
-const { SystemProgram } = anchor.web3;
-import { PublicKey } from "@solana/web3.js";
-const {
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
 	TOKEN_PROGRAM_ID,
-	Token,
-	ASSOCIATED_TOKEN_PROGRAM_ID,
-} = require("@solana/spl-token");
+	getAssociatedTokenAddress,
+} from "@solana/spl-token"
 import { SplTokenFaucet } from "../target/types/spl_token_faucet";
 
+const payer = anchor.web3.Keypair.generate();
 describe("spl-token-faucet", () => {
-	// Configure the client to use the local cluster.
-	anchor.setProvider(anchor.Provider.env());
+	anchor.setProvider(anchor.AnchorProvider.env());
 	const program = anchor.workspace.SplTokenFaucet as Program<SplTokenFaucet>;
-
-	async function airdropTokens(
-		amount,
-		mintPda,
-		mintPdaBump,
-		receiver,
-		associatedTokenAccount
-	) {
-		let amountToAirdrop = new anchor.BN(amount * 1000000);
-		await program.rpc.airdrop(mintPdaBump, amountToAirdrop, {
-			accounts: {
-				payer: program.provider.wallet.publicKey,
-				mint: mintPda,
-				destination: associatedTokenAccount,
-				receiver: receiver,
-				rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-				tokenProgram: TOKEN_PROGRAM_ID,
-				systemProgram: SystemProgram.programId,
-				associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-			},
-			signers: [],
-		});
-	}
 
 	async function getBalance(receiver, mintPda) {
 		const parsedTokenAccountsByOwner =
@@ -44,54 +19,54 @@ describe("spl-token-faucet", () => {
 				receiver,
 				{ mint: mintPda }
 			);
+
 		let balance =
 			parsedTokenAccountsByOwner.value[0].account.data.parsed.info.tokenAmount
 				.uiAmount;
 
 		return balance;
 	}
+	it("Initializes the token", async () => {
+    await program.methods.initializeMint().rpc()
+  })
 
-	it("Airdrop tokens 2 times and check token account", async () => {
-		// Get the PDA that is the mint for the faucet
-		const [mintPda, mintPdaBump] =
-			await anchor.web3.PublicKey.findProgramAddressSync(
-				[Buffer.from(anchor.utils.bytes.utf8.encode("faucet-mint"))],
-				program.programId
-			);
-
-		const receiver = new PublicKey(
-			"8hpvAu6cq6qzVM4NpXp9bH2uuT4PEYMJvrXKrSd5tdfR"
+	it("Airdrop tokens  and check token account", async () => {
+		const [mintPda, _] =
+		await anchor.web3.PublicKey.findProgramAddressSync(
+			[Buffer.from("faucet-mint")],
+			program.programId
 		);
 
-		let associatedTokenAccount = await Token.getAssociatedTokenAddress(
-			ASSOCIATED_TOKEN_PROGRAM_ID,
-			TOKEN_PROGRAM_ID,
+		let associatedTokenAccount = await getAssociatedTokenAddress(
 			mintPda,
-			receiver,
-			true
+			payer.publicKey
 		);
-		// FIRST AIRDROP
-		const firstAirdropAmount = 100;
-		await airdropTokens(
-			firstAirdropAmount,
-			mintPda,
-			mintPdaBump,
-			receiver,
-			associatedTokenAccount
-		);
-		let balance = await getBalance(receiver, mintPda);
-		assert.ok(balance == firstAirdropAmount);
 
-		// SECOND AIRDROP
-		const secondAirdropAmount = 200;
-		await airdropTokens(
-			secondAirdropAmount,
-			mintPda,
-			mintPdaBump,
-			receiver,
-			associatedTokenAccount
-		);
-		balance = await getBalance(receiver, mintPda);
-		assert.ok(balance == firstAirdropAmount + secondAirdropAmount);
+		const signature = await program.provider.connection.requestAirdrop(payer.publicKey, LAMPORTS_PER_SOL * 2)
+    let latestBlockhash = await program.provider.connection.getLatestBlockhash();
+    await program.provider.connection.confirmTransaction(
+      {
+        signature,
+        ...latestBlockhash,
+      },
+      "confirmed"
+    );
+
+		let amount = 1;
+		let amountToAirdrop = new anchor.BN(amount * 1000000);
+		await program.methods.airdrop(amountToAirdrop).accounts({
+			mint: mintPda,
+			tokenAccount: associatedTokenAccount,
+			user: payer.publicKey,
+		})
+		.signers([payer])
+		.rpc()
+
+
+
+
+		let balance = await getBalance(payer.publicKey, mintPda);
+		assert.ok(balance == amount);
+
 	});
 });

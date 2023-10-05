@@ -1,5 +1,8 @@
+[features]
+seeds = true
+
 [programs.localnet]
-spl_token_faucet = "4sN8PnN2ki2W4TFXAfzR645FWs8nimmsYeNtxM8RBK6A"
+spl_token_faucet = "9XXyjMZtennyC1fRSLvUpiq9UuAfFpCS1a8RSzcg8rMH"
 
 [registry]
 url = "https://anchor.projectserum.com"

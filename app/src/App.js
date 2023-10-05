@@ -12,7 +12,7 @@ import Footer from "./components/Footer";
 import AirDrop from "./components/Airdrop";
 
 const App: FC = () => {
-	const [network, setNetwork] = useState("https://api.devnet.solana.com");
+	const network = "https://staging-rpc.dev.eclipsenetwork.xyz"
 	const [reload, setReload] = useState(true);
 	const [autoConnect, _setAutoConnect] = useLocalStorage("autoConnect", false);
 	const search = window.location.search;
@@ -35,7 +35,6 @@ const App: FC = () => {
 							reload={reload}
 							setReload={setReload}
 							network={network}
-							setNetwork={setNetwork}
 						/>
 						<Footer />
 					</Router>

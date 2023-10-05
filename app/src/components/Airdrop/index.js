@@ -154,28 +154,6 @@ const AirDrop: FC = ({ tokenName, reload, setReload, network, setNetwork }) => {
 	return (
 		<div className="airdrop-container">
 			<div className="airdrop-wrapper">
-				<h3>Network selection</h3>
-				<div className="network-dropdown-wrapper">
-					<Select
-						className="network-dropdown navbar-button react-select-container"
-						classNamePrefix="react-select"
-						onChange={handleChange}
-						defaultValue={options[0]}
-						options={options}
-						menuPlacement="auto"
-						menuPosition="fixed"
-						isSearchable={false}
-						theme={(theme) => ({
-							...theme,
-							borderRadius: 0,
-							colors: {
-								...theme.colors,
-								primary: "black",
-								primary25: "#f0f0f0",
-							},
-						})}
-					/>
-				</div>
 				<h3>Address for airdrop</h3>
 				<p>The address the SOL and {tokenName} will be sent to.</p>
 				<input
