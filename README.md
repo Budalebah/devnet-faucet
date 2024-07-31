@@ -39,9 +39,12 @@ anchor deploy
 ```
 
 ```shell
-ANCHOR_WALLET=~/.config/solana/id.json ANCHOR_PROVIDER_URL=https://staging-rpc.dev.eclipsenetwork.xyz  node setup/token_airdrop.js
+ANCHOR_WALLET=~/.config/solana/id.json 
+ANCHOR_PROVIDER_URL=https://staging-rpc.dev.eclipsenetwork.xyz
 ```
-
+```bash
+node setup/token_airdrop.js
+```
 ## Running program tests
 Before it's possible to run tests, all packages need to be installed and `mocha-ts` and `typescript` need to be globally installed.
 ```bash
